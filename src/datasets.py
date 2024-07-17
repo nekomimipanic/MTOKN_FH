@@ -24,10 +24,15 @@ class ThingsMEGDataset(torch.utils.data.Dataset):
         return len(self.X)
 
     def __getitem__(self, i):
+        X = self.X[i]
+        
+        # ベースライン補正を追加
+        baseline = torch.mean(X[:, :int(X.shape[1] * 0.1)], dim=1, keepdim=True)
+        X = X - baseline
         if hasattr(self, "y"):
-            return self.X[i], self.y[i], self.subject_idxs[i]
+            return X, self.y[i], self.subject_idxs[i]
         else:
-            return self.X[i], self.subject_idxs[i]
+            return X, self.subject_idxs[i]
         
     @property
     def num_channels(self) -> int:
