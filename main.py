@@ -39,9 +39,9 @@ def run(args: DictConfig):
     # ------------------
     #       Model
     # ------------------
-    num_subjects = len(torch.unique(train_set.subject_idxs)) #被験者ID
+    num_subjects = 4  # 明示的に4人と指定
     model = BasicConvClassifier(
-        train_set.num_classes, train_set.seq_len, train_set.num_channels, num_subjects
+        train_set.num_classes, train_set.seq_len, train_set.num_channels, num_subjects, hid_dim=128
     ).to(args.device)
 
     # ------------------

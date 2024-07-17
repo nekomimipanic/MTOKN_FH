@@ -10,8 +10,9 @@ class BasicConvClassifier(nn.Module):
         num_classes: int,
         seq_len: int,
         in_channels: int,
-        hid_dim: int = 128
         num_subjects: int,  # 追加: 被験者の数
+        hid_dim: int = 128,
+        subject_dim: int = 32  # 被験者埋め込みの次元数
     ) -> None:
         super().__init__()
 
@@ -25,8 +26,12 @@ class BasicConvClassifier(nn.Module):
             Rearrange("b d 1 -> b d"),
             nn.Linear(hid_dim, num_classes),
         )
-        # 追加: 被験者の埋め込み層
-        self.subject_embedding = nn.Embedding(num_subjects, hid_dim)
+        # 被験者の埋め込み層
+        self.subject_embedding = nn.Embedding(num_subjects, subject_dim)
+        
+        # 被験者特有の特徴を学習する層
+        self.subject_fc = nn.Linear(subject_dim, hid_dim)
+
 
     def forward(self, X: torch.Tensor, subject_idx: torch.Tensor) -> torch.Tensor:
         """_summary_
@@ -36,9 +41,13 @@ class BasicConvClassifier(nn.Module):
             X ( b, num_classes ): _description_
         """
         X = self.blocks(X)
-        # 被験者の埋め込みベクトルを取得し、特徴マップに加算
-        subject_emb = self.subject_embedding(subject_idx).unsqueeze(-1)
-        X = X + subject_emb
+        # 被験者の埋め込みを取得し、特徴マップに変換
+        subject_emb = self.subject_embedding(subject_idx)
+        subject_features = self.subject_fc(subject_emb).unsqueeze(-1)
+        
+        # 被験者特有の特徴を加算
+        X = X + subject_features
+
         return self.head(X)
 
 
